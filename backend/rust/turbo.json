@@ -1,0 +1,7 @@
+{
+  "extends": ["//"],
+  "tasks": {
+    "check": { "inputs": ["$TURBO_DEFAULT$", "../../contracts/v1/**"] },
+    "build": { "inputs": ["$TURBO_DEFAULT$", "../../contracts/v1/**"] }
+  }
+}

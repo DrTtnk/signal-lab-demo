@@ -1,0 +1,10 @@
+{
+  "name": "@signal-lab/java",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "setup": "mvn dependency:resolve",
+    "check": "mvn verify",
+    "build": "mvn -DskipTests package"
+  }
+}

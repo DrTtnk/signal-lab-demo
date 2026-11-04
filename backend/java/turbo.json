@@ -1,0 +1,19 @@
+{
+  "extends": [
+    "//"
+  ],
+  "tasks": {
+    "check": {
+      "dependsOn": [
+        "@signal-lab/fixtures#fixtures",
+        "@signal-lab/python#image",
+        "@signal-lab/rust#check"
+      ],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "../../docker/database/**",
+        "../../.fixtures/**"
+      ]
+    }
+  }
+}

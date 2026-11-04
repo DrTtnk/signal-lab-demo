@@ -1,0 +1,10 @@
+{
+  "name": "@signal-lab/fixtures",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "setup": "uv sync --locked",
+    "fixtures": "uv run --locked python -m signal_lab_fixtures ../../.fixtures",
+    "check": "cargo build --locked --manifest-path ../../backend/rust/Cargo.toml && uv run --locked ruff check && uv run --locked ruff format --check && uv run --locked pyright && uv run --locked pytest"
+  }
+}

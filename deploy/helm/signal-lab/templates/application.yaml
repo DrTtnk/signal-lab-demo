@@ -1,0 +1,63 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: application
+spec:
+  selector: { app: application }
+  ports:
+    - port: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: application
+spec:
+  replicas: {{ .Values.application.replicas }}
+  selector:
+    matchLabels: { app: application }
+  template:
+    metadata:
+      labels: { app: application }
+    spec:
+      containers:
+        - name: application
+          image: {{ .Values.image.application }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: SPRING_DATASOURCE_URL
+              valueFrom:
+                secretKeyRef: { name: signal-lab, key: SPRING_DATASOURCE_URL }
+            - { name: SPRING_DATASOURCE_USERNAME, value: analysis }
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: signal-lab, key: SPRING_DATASOURCE_PASSWORD }
+            - { name: SPRING_RABBITMQ_HOST, value: rabbitmq }
+            - name: SPRING_RABBITMQ_USERNAME
+              valueFrom:
+                secretKeyRef: { name: signal-lab, key: RABBITMQ_USER }
+            - name: SPRING_RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: signal-lab, key: RABBITMQ_PASSWORD }
+            - { name: RECORDINGS_BASE_URL, value: "http://recordings:8000" }
+            - { name: ENGINE_PATH, value: /app/signal-lab-engine }
+            - { name: ENGINE_DEADLINE, value: {{ .Values.application.engineDeadline | quote }} }
+            - { name: ENGINE_WORKERS, value: {{ .Values.application.engineWorkers | quote }} }
+          ports:
+            - containerPort: 8080
+          startupProbe:
+            httpGet: { path: /actuator/health, port: 8080 }
+            periodSeconds: 5
+            failureThreshold: 36
+          readinessProbe:
+            httpGet: { path: /actuator/health, port: 8080 }
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet: { path: /actuator/health, port: 8080 }
+            periodSeconds: 20
+            timeoutSeconds: 3
+          resources:
+            {{- toYaml .Values.application.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }

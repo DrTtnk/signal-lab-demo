@@ -1,0 +1,6 @@
+apiVersion: v2
+name: signal-lab
+description: Local Kubernetes target (minikube) for the Signal Lab proof of work
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

@@ -1,0 +1,18 @@
+{
+  "rms": {
+    "rtol": 1e-10,
+    "atol": 1e-13
+  },
+  "meanPsd": {
+    "rtol": 1e-9,
+    "atol": 1e-20
+  },
+  "bandPowers": {
+    "rtol": 1e-10,
+    "atol": 1e-16
+  },
+  "frequencyHz": {
+    "rtol": 0,
+    "atol": 0
+  }
+}

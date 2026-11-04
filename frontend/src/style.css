@@ -1,0 +1,42 @@
+@media (prefers-color-scheme: dark) {
+  :root {
+    color: #e5e7eb;
+    background: #111827;
+    font-family: system-ui, sans-serif;
+  }
+}
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+main {
+  max-width: 56rem;
+  margin: 4rem auto;
+  padding: 0 1.5rem;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+th,
+td {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #374151;
+}
+caption {
+  text-align: left;
+  font-weight: 600;
+  padding-bottom: 0.5rem;
+}
+button {
+  margin: 1rem 0;
+  padding: 0.5rem 1rem;
+  font: inherit;
+}
+.channel {
+  margin-right: 0.75rem;
+}
+[role="alert"] {
+  color: #fca5a5;
+}

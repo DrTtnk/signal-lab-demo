@@ -1,0 +1,25 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "envMode": "loose",
+  "tasks": {
+    "setup": {
+      "cache": false
+    },
+    "check": {
+      "outputs": []
+    },
+    "build": {
+      "outputs": [
+        "dist/**",
+        "target/release/signal-lab-engine",
+        "target/*.jar"
+      ]
+    },
+    "fixtures": {
+      "cache": false
+    },
+    "image": {
+      "cache": false
+    }
+  }
+}

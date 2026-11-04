@@ -1,0 +1,14 @@
+{
+  "extends": [
+    "//"
+  ],
+  "tasks": {
+    "check": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "../../contracts/v1/**",
+        "../../docker/database/**"
+      ]
+    }
+  }
+}

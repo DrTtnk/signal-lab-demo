@@ -1,0 +1,50 @@
+image:
+  pullPolicy: IfNotPresent
+  web: signal-lab-web:latest
+  application: signal-lab-application:latest
+  recordings: signal-lab-recordings:latest
+  database: postgres:18.1-alpine
+  rabbitmq: rabbitmq:4.1.8-alpine
+
+credentials:
+  postgresDb: ""
+  postgresUser: ""
+  postgresPassword: ""
+  recordingsDbPassword: ""
+  analysisDbPassword: ""
+  rabbitmqUser: ""
+  rabbitmqPassword: ""
+
+databaseInit: ""
+
+fixturesHostPath: /data/signal-lab-fixtures
+
+application:
+  replicas: 2
+  engineDeadline: 60s
+  engineWorkers: "1"
+  resources:
+    requests: { cpu: 250m, memory: 512Mi }
+    limits: { cpu: "1", memory: 1Gi }
+
+recordings:
+  resources:
+    requests: { cpu: 100m, memory: 128Mi }
+    limits: { cpu: 500m, memory: 256Mi }
+
+web:
+  resources:
+    requests: { cpu: 50m, memory: 32Mi }
+    limits: { cpu: 200m, memory: 64Mi }
+
+rabbitmq:
+  storage: 1Gi
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { cpu: 500m, memory: 512Mi }
+
+database:
+  storage: 1Gi
+  resources:
+    requests: { cpu: 100m, memory: 128Mi }
+    limits: { cpu: "1", memory: 512Mi }

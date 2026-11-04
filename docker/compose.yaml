@@ -1,0 +1,109 @@
+name: signal-lab
+services:
+  web:
+    build:
+      context: ..
+      dockerfile: docker/web.Dockerfile
+    ports:
+      - "127.0.0.1:${WEB_PORT:?Set WEB_PORT in .env}:8080"
+    depends_on:
+      application:
+        condition: service_healthy
+    networks: [public, internal]
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: [no-new-privileges:true]
+    healthcheck:
+      test: [CMD, curl, --fail, --silent, --show-error, http://127.0.0.1:8080/]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+  application:
+    build:
+      context: ..
+      dockerfile: docker/application.Dockerfile
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://database:5432/${POSTGRES_DB:?Set POSTGRES_DB in .env}
+      SPRING_DATASOURCE_USERNAME: analysis
+      SPRING_DATASOURCE_PASSWORD: ${ANALYSIS_DB_PASSWORD:?Set ANALYSIS_DB_PASSWORD in .env}
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER:?Set RABBITMQ_USER in .env}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?Set RABBITMQ_PASSWORD in .env}
+      RECORDINGS_BASE_URL: http://recordings:8000
+      ENGINE_PATH: /app/signal-lab-engine
+      ENGINE_DEADLINE: 60s
+      ENGINE_WORKERS: "1"
+    depends_on:
+      database:
+        condition: service_healthy
+      recordings:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks: [internal]
+    healthcheck:
+      test: [CMD, curl, --fail, --silent, --show-error, http://127.0.0.1:8080/actuator/health]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    security_opt: [no-new-privileges:true]
+  recordings:
+    build:
+      context: ..
+      dockerfile: docker/recordings.Dockerfile
+    environment:
+      RECORDINGS_DATABASE_URL: postgresql+psycopg://recordings:${RECORDINGS_DB_PASSWORD:?Set RECORDINGS_DB_PASSWORD in .env}@database:5432/${POSTGRES_DB:?Set POSTGRES_DB in .env}
+      RECORDINGS_DIR: /data
+      CONTRACTS_DIR: /app/contracts/v1
+    volumes: ["${FIXTURES_DIR:?Set FIXTURES_DIR in .env}:/data:ro"]
+    depends_on:
+      database:
+        condition: service_healthy
+    networks: [internal]
+    healthcheck:
+      test: [CMD, python, -c, "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/health', timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    security_opt: [no-new-privileges:true]
+  database:
+    image: postgres:18.1-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in .env}
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      RECORDINGS_DB_PASSWORD: ${RECORDINGS_DB_PASSWORD:?Set RECORDINGS_DB_PASSWORD in .env}
+      ANALYSIS_DB_PASSWORD: ${ANALYSIS_DB_PASSWORD:?Set ANALYSIS_DB_PASSWORD in .env}
+    volumes:
+      - database-data:/var/lib/postgresql
+      - ./database/init.sh:/docker-entrypoint-initdb.d/init.sh:ro
+    networks: [internal]
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    security_opt: [no-new-privileges:true]
+  rabbitmq:
+    image: rabbitmq:4.1.8-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:?Set RABBITMQ_USER in .env}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?Set RABBITMQ_PASSWORD in .env}
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks: [internal]
+    healthcheck:
+      test: [CMD, rabbitmq-diagnostics, -q, ping]
+      interval: 10s
+      timeout: 10s
+      retries: 6
+    security_opt: [no-new-privileges:true]
+networks:
+  public: {}
+  internal:
+    internal: true
+volumes:
+  database-data: {}
+  rabbitmq-data: {}

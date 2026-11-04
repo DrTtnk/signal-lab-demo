@@ -1,0 +1,18 @@
+{
+  "id": "pcm16-48k-hann4096-v1",
+  "sampleRateHz": 48000,
+  "windowFrames": 4096,
+  "overlapFrames": 0,
+  "pcmBits": 16,
+  "pcmDivisor": 32768,
+  "window": "periodic_hann",
+  "detrend": false,
+  "spectrum": "one_sided_density",
+  "average": "arithmetic_mean",
+  "accumulation": "f64",
+  "bands": [
+    [0, 128],
+    [128, 512],
+    [512, 2049]
+  ]
+}

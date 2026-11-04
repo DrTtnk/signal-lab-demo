@@ -1,0 +1,11 @@
+{
+  "name": "@signal-lab/python",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "setup": "uv sync --locked",
+    "check": "uv run --locked ruff check && uv run --locked ruff format --check && uv run --locked pyright && uv run --locked pytest",
+    "build": "uv build",
+    "image": "../../docker/build.sh recordings"
+  }
+}

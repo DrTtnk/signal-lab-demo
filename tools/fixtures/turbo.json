@@ -1,0 +1,15 @@
+{
+  "extends": [
+    "//"
+  ],
+  "tasks": {
+    "check": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "../../backend/rust/src/**",
+        "../../backend/rust/Cargo.*",
+        "../../contracts/v1/**"
+      ]
+    }
+  }
+}

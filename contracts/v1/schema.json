@@ -1,0 +1,1043 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:signal-lab:contracts:v1",
+  "title": "Signal Lab version 1 wire contracts",
+  "$defs": {
+    "RecordingManifest": {
+      "type": "object",
+      "properties": {
+        "contractVersion": {
+          "const": "1"
+        },
+        "recordings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Recording"
+          },
+          "minItems": 0
+        }
+      },
+      "required": ["contractVersion", "recordings"],
+      "additionalProperties": false
+    },
+    "ProfileId": {
+      "const": "pcm16-48k-hann4096-v1"
+    },
+    "Digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "Profile": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/ProfileId"
+        },
+        "sampleRateHz": {
+          "const": 48000
+        },
+        "windowFrames": {
+          "const": 4096
+        },
+        "overlapFrames": {
+          "const": 0
+        },
+        "pcmBits": {
+          "const": 16
+        },
+        "pcmDivisor": {
+          "const": 32768
+        },
+        "window": {
+          "const": "periodic_hann"
+        },
+        "detrend": {
+          "const": false
+        },
+        "spectrum": {
+          "const": "one_sided_density"
+        },
+        "average": {
+          "const": "arithmetic_mean"
+        },
+        "accumulation": {
+          "const": "f64"
+        },
+        "bands": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "const": [0, 128]
+            },
+            {
+              "const": [128, 512]
+            },
+            {
+              "const": [512, 2049]
+            }
+          ],
+          "items": false,
+          "minItems": 3,
+          "maxItems": 3
+        }
+      },
+      "required": [
+        "id",
+        "sampleRateHz",
+        "windowFrames",
+        "overlapFrames",
+        "pcmBits",
+        "pcmDivisor",
+        "window",
+        "detrend",
+        "spectrum",
+        "average",
+        "accumulation",
+        "bands"
+      ],
+      "additionalProperties": false
+    },
+    "Recording": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "recordingId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "sha256": {
+          "$ref": "#/$defs/Digest"
+        },
+        "byteLength": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "frameCount": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "channelCount": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4
+        },
+        "sampleRateHz": {
+          "const": 48000
+        },
+        "encoding": {
+          "const": "wav_pcm_s16le"
+        },
+        "provenance": {
+          "$ref": "#/$defs/RecordingProvenance"
+        }
+      },
+      "required": [
+        "recordingId",
+        "name",
+        "sha256",
+        "byteLength",
+        "frameCount",
+        "channelCount",
+        "sampleRateHz",
+        "encoding",
+        "provenance"
+      ],
+      "additionalProperties": false
+    },
+    "RequestItem": {
+      "type": "object",
+      "properties": {
+        "itemId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "recordingId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "channels": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3
+          },
+          "minItems": 1,
+          "maxItems": 4,
+          "uniqueItems": true
+        }
+      },
+      "required": ["itemId", "recordingId", "channels"],
+      "additionalProperties": false
+    },
+    "AnalysisRequest": {
+      "type": "object",
+      "properties": {
+        "contractVersion": {
+          "const": "1"
+        },
+        "profileId": {
+          "$ref": "#/$defs/ProfileId"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RequestItem"
+          },
+          "minItems": 1
+        }
+      },
+      "required": ["contractVersion", "profileId", "items"],
+      "additionalProperties": false
+    },
+    "Peak": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "NoPeak"
+            }
+          },
+          "required": ["kind"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "Peak"
+            },
+            "bin": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2048
+            },
+            "frequencyHz": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 24000
+            }
+          },
+          "required": ["kind", "bin", "frequencyHz"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "ChannelResult": {
+      "type": "object",
+      "properties": {
+        "channelIndex": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3
+        },
+        "rms": {
+          "type": "number",
+          "minimum": 0
+        },
+        "meanPsd": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 0
+          },
+          "minItems": 2049,
+          "maxItems": 2049
+        },
+        "bandPowers": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 0
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "peak": {
+          "$ref": "#/$defs/Peak"
+        }
+      },
+      "required": ["channelIndex", "rms", "meanPsd", "bandPowers", "peak"],
+      "additionalProperties": false
+    },
+    "AnalysisResult": {
+      "type": "object",
+      "properties": {
+        "processedFrames": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "ignoredTailFrames": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4095
+        },
+        "processedWindows": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "channels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ChannelResult"
+          },
+          "minItems": 1,
+          "maxItems": 4
+        }
+      },
+      "required": [
+        "processedFrames",
+        "ignoredTailFrames",
+        "processedWindows",
+        "channels"
+      ],
+      "additionalProperties": false
+    },
+    "ItemError": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "enum": [
+            "unknown_recording",
+            "channel_unavailable",
+            "unsupported_recording",
+            "truncated_recording",
+            "digest_mismatch",
+            "insufficient_frames"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        }
+      },
+      "required": ["code", "message"],
+      "additionalProperties": false
+    },
+    "InfrastructureError": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "enum": [
+            "engine_unavailable",
+            "recordings_unavailable",
+            "database_unavailable",
+            "deadline_exceeded",
+            "engine_protocol_error",
+            "application_stopped",
+            "broker_unavailable"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        }
+      },
+      "required": ["code", "message"],
+      "additionalProperties": false
+    },
+    "EngineInput": {
+      "type": "object",
+      "properties": {
+        "contractVersion": {
+          "const": "1"
+        },
+        "profileId": {
+          "$ref": "#/$defs/ProfileId"
+        },
+        "itemId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "recording": {
+          "$ref": "#/$defs/Recording"
+        },
+        "channels": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3
+          },
+          "minItems": 1,
+          "maxItems": 4,
+          "uniqueItems": true
+        },
+        "workers": {
+          "enum": [1, 2, 4]
+        }
+      },
+      "required": [
+        "contractVersion",
+        "profileId",
+        "itemId",
+        "recording",
+        "channels",
+        "workers"
+      ],
+      "additionalProperties": false
+    },
+    "SucceededItem": {
+      "type": "object",
+      "properties": {
+        "itemId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "recordingId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "state": {
+          "const": "Succeeded"
+        },
+        "recordingSha256": {
+          "$ref": "#/$defs/Digest"
+        },
+        "profileId": {
+          "$ref": "#/$defs/ProfileId"
+        },
+        "engineBuild": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "workers": {
+          "enum": [1, 2, 4]
+        },
+        "result": {
+          "$ref": "#/$defs/AnalysisResult"
+        },
+        "recordingProvenance": {
+          "$ref": "#/$defs/RecordingProvenance"
+        }
+      },
+      "required": [
+        "itemId",
+        "recordingId",
+        "state",
+        "recordingSha256",
+        "profileId",
+        "engineBuild",
+        "workers",
+        "result",
+        "recordingProvenance"
+      ],
+      "additionalProperties": false
+    },
+    "FailedItem": {
+      "type": "object",
+      "properties": {
+        "itemId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "recordingId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "state": {
+          "const": "Failed"
+        },
+        "error": {
+          "$ref": "#/$defs/ItemError"
+        }
+      },
+      "required": ["itemId", "recordingId", "state", "error"],
+      "additionalProperties": false
+    },
+    "PendingItem": {
+      "type": "object",
+      "properties": {
+        "itemId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "recordingId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "state": {
+          "const": "Pending"
+        }
+      },
+      "required": ["itemId", "recordingId", "state"],
+      "additionalProperties": false
+    },
+    "RunningItem": {
+      "type": "object",
+      "properties": {
+        "itemId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "recordingId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "state": {
+          "const": "Running"
+        }
+      },
+      "required": ["itemId", "recordingId", "state"],
+      "additionalProperties": false
+    },
+    "InterruptedItem": {
+      "type": "object",
+      "properties": {
+        "itemId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "recordingId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "state": {
+          "const": "Interrupted"
+        },
+        "error": {
+          "$ref": "#/$defs/InfrastructureError"
+        }
+      },
+      "required": ["itemId", "recordingId", "state", "error"],
+      "additionalProperties": false
+    },
+    "NotRunItem": {
+      "type": "object",
+      "properties": {
+        "itemId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "recordingId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "state": {
+          "const": "NotRun"
+        },
+        "reason": {
+          "const": "batch_interrupted"
+        }
+      },
+      "required": ["itemId", "recordingId", "state", "reason"],
+      "additionalProperties": false
+    },
+    "EngineOutput": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/SucceededItem"
+        },
+        {
+          "$ref": "#/$defs/FailedItem"
+        }
+      ]
+    },
+    "ItemSnapshot": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/SucceededItem"
+        },
+        {
+          "$ref": "#/$defs/FailedItem"
+        },
+        {
+          "$ref": "#/$defs/PendingItem"
+        },
+        {
+          "$ref": "#/$defs/RunningItem"
+        },
+        {
+          "$ref": "#/$defs/InterruptedItem"
+        },
+        {
+          "$ref": "#/$defs/NotRunItem"
+        }
+      ]
+    },
+    "QueuedBatch": {
+      "type": "object",
+      "properties": {
+        "contractVersion": {
+          "const": "1"
+        },
+        "batchId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "profileId": {
+          "$ref": "#/$defs/ProfileId"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "state": {
+          "const": "Queued"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/PendingItem"
+              },
+              {
+                "$ref": "#/$defs/FailedItem"
+              }
+            ]
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "contractVersion",
+        "batchId",
+        "profileId",
+        "createdAt",
+        "state",
+        "items"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "properties": {
+            "items": {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "const": "Pending"
+                  }
+                },
+                "required": ["state"]
+              },
+              "minContains": 1
+            }
+          }
+        }
+      ]
+    },
+    "RunningBatch": {
+      "type": "object",
+      "properties": {
+        "contractVersion": {
+          "const": "1"
+        },
+        "batchId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "profileId": {
+          "$ref": "#/$defs/ProfileId"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "state": {
+          "const": "Running"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/PendingItem"
+              },
+              {
+                "$ref": "#/$defs/RunningItem"
+              },
+              {
+                "$ref": "#/$defs/SucceededItem"
+              },
+              {
+                "$ref": "#/$defs/FailedItem"
+              }
+            ]
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "contractVersion",
+        "batchId",
+        "profileId",
+        "createdAt",
+        "state",
+        "items"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "properties": {
+            "items": {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "enum": ["Pending", "Running"]
+                  }
+                },
+                "required": ["state"]
+              },
+              "minContains": 1
+            }
+          }
+        }
+      ]
+    },
+    "CompletedBatch": {
+      "type": "object",
+      "properties": {
+        "contractVersion": {
+          "const": "1"
+        },
+        "batchId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "profileId": {
+          "$ref": "#/$defs/ProfileId"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "state": {
+          "const": "Completed"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/SucceededItem"
+              }
+            ]
+          },
+          "minItems": 1
+        },
+        "finishedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "contractVersion",
+        "batchId",
+        "profileId",
+        "createdAt",
+        "state",
+        "items",
+        "finishedAt"
+      ],
+      "additionalProperties": false
+    },
+    "CompletedWithErrorsBatch": {
+      "type": "object",
+      "properties": {
+        "contractVersion": {
+          "const": "1"
+        },
+        "batchId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "profileId": {
+          "$ref": "#/$defs/ProfileId"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "state": {
+          "const": "CompletedWithErrors"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/SucceededItem"
+              },
+              {
+                "$ref": "#/$defs/FailedItem"
+              }
+            ]
+          },
+          "minItems": 1
+        },
+        "finishedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "contractVersion",
+        "batchId",
+        "profileId",
+        "createdAt",
+        "state",
+        "items",
+        "finishedAt"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "properties": {
+            "items": {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "const": "Succeeded"
+                  }
+                },
+                "required": ["state"]
+              },
+              "minContains": 1
+            }
+          }
+        },
+        {
+          "properties": {
+            "items": {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "state": {
+                    "const": "Failed"
+                  }
+                },
+                "required": ["state"]
+              },
+              "minContains": 1
+            }
+          }
+        }
+      ]
+    },
+    "AllItemsFailedBatch": {
+      "type": "object",
+      "properties": {
+        "contractVersion": {
+          "const": "1"
+        },
+        "batchId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "profileId": {
+          "$ref": "#/$defs/ProfileId"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "state": {
+          "const": "AllItemsFailed"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/FailedItem"
+              }
+            ]
+          },
+          "minItems": 1
+        },
+        "finishedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "contractVersion",
+        "batchId",
+        "profileId",
+        "createdAt",
+        "state",
+        "items",
+        "finishedAt"
+      ],
+      "additionalProperties": false
+    },
+    "InterruptedBatch": {
+      "type": "object",
+      "properties": {
+        "contractVersion": {
+          "const": "1"
+        },
+        "batchId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "profileId": {
+          "$ref": "#/$defs/ProfileId"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "state": {
+          "const": "Interrupted"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/SucceededItem"
+              },
+              {
+                "$ref": "#/$defs/FailedItem"
+              },
+              {
+                "$ref": "#/$defs/InterruptedItem"
+              },
+              {
+                "$ref": "#/$defs/NotRunItem"
+              }
+            ]
+          },
+          "minItems": 1
+        },
+        "finishedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "error": {
+          "$ref": "#/$defs/InfrastructureError"
+        }
+      },
+      "required": [
+        "contractVersion",
+        "batchId",
+        "profileId",
+        "createdAt",
+        "state",
+        "items",
+        "finishedAt",
+        "error"
+      ],
+      "additionalProperties": false
+    },
+    "BatchSnapshot": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/QueuedBatch"
+        },
+        {
+          "$ref": "#/$defs/RunningBatch"
+        },
+        {
+          "$ref": "#/$defs/CompletedBatch"
+        },
+        {
+          "$ref": "#/$defs/CompletedWithErrorsBatch"
+        },
+        {
+          "$ref": "#/$defs/AllItemsFailedBatch"
+        },
+        {
+          "$ref": "#/$defs/InterruptedBatch"
+        }
+      ]
+    },
+    "RecordingProvenance": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "FixedPattern"
+            },
+            "recipeVersion": {
+              "const": "integer-patterns-v1"
+            },
+            "patternName": {
+              "enum": [
+                "zero-mono",
+                "dc-mono",
+                "nyquist-mono",
+                "quarter-cycle-mono",
+                "stereo-with-tail"
+              ]
+            }
+          },
+          "required": ["kind", "recipeVersion", "patternName"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "Seeded"
+            },
+            "recipeVersion": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "seed": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": ["kind", "recipeVersion", "seed"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "Tolerance": {
+      "type": "object",
+      "properties": {
+        "rtol": {
+          "type": "number",
+          "minimum": 0
+        },
+        "atol": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "required": ["rtol", "atol"],
+      "additionalProperties": false
+    },
+    "TolerancePolicy": {
+      "type": "object",
+      "properties": {
+        "rms": {
+          "$ref": "#/$defs/Tolerance"
+        },
+        "meanPsd": {
+          "$ref": "#/$defs/Tolerance"
+        },
+        "bandPowers": {
+          "$ref": "#/$defs/Tolerance"
+        },
+        "frequencyHz": {
+          "$ref": "#/$defs/Tolerance"
+        }
+      },
+      "required": ["rms", "meanPsd", "bandPowers", "frequencyHz"],
+      "additionalProperties": false
+    }
+  }
+}
