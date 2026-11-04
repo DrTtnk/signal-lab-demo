@@ -38,7 +38,7 @@ Conditions:
 - The run used CPUs 0-3 (`taskset -c 0-3`). They are four separate cores of the same class (5.3 GHz maximum).
 - Governor `performance`, turbo on. The run did not log the frequency.
 - rustc and cargo 1.91.0. Release profile of `cargo bench`. No `target-cpu` flag.
-- Source commit `0d638f7`.
+- Source: the engine with the per-sample Hound decoder.
 - Command: `taskset -c 0-3 cargo bench --locked`. One run, criterion defaults (3 s warm-up, 100 samples).
 
 The machine was not fully idle:
@@ -75,7 +75,7 @@ For the largest input, 2 workers are 1.23 times faster than 1 worker. 4 workers 
 Group `sequential_parts_1024_windows` in `benches/engine.rs`. The input is the same 33,554,476-byte file with four channels. The run uses one thread.
 
 - Command: `taskset -c 5 cargo bench --locked --bench engine -- sequential_parts`.
-- Source: commit `fe1de6f` plus the bench group. rustc 1.91.0.
+- Source: the engine with the per-sample Hound decoder, plus the bench group. rustc 1.91.0.
 - CPU 5 was 2% busy before the run. The Python process of the owner (100% of one core) was on CPU 3.
 - One run. Within-run intervals. The caveats of the previous result apply.
 
@@ -100,7 +100,7 @@ Reading, for the single-worker run of 275 ms:
 Change: Hound parses and checks only the header. The engine reads each window with one `read_exact` and converts the bytes with `i16::from_le_bytes`.
 
 - The 86 Python tests pass before and after the change. Five of them are new: a chunk before the data, and cuts at odd offsets. A byte-order mutation makes the tests fail.
-- Source: commit `8010062` plus the change.
+- Source: the engine with the per-sample Hound decoder, plus the bulk-decoder change.
 - Command: `taskset -c 4-7 target/release/deps/engine-<hash> --bench`. This runs the whole benchmark file once.
 - The run used cores 4-7 and not 0-3, because the Python process of the owner had moved to CPU 1. All cores are of the same class.
 - The kernel benchmark, which the change does not touch, read 21.3 µs and not 20.3 µs (+5%). Differences of this size between the two runs are noise or core-to-core variation.
