@@ -1,101 +1,56 @@
-> **Signal Lab is a demonstration, not a reference architecture.** It shows how Java, Python, Rust, React, PostgreSQL and RabbitMQ can work together in one system. It runs on Docker Compose and on a local Kubernetes cluster. The goal is to show how these technologies interact.
->
-> The author would not use this design for a production system. The workload is small. Four languages and five services add operating cost and failure modes that a production system should avoid. A real system should use the simplest architecture that meets its requirements.
+# Signal Lab
 
-# Minimal getting started
+> **Technology demonstration.** Signal Lab is not a production architecture or a system designed for a client. Its brief is to show how Java, Rust, Python and React can work together on a distributed workload where performance matters. The service boundaries make the integration between the technologies visible. A production design would start with an analysis of the client's needs and a concrete set of requirements for workload, latency, reliability, security, deployment and operating cost.
 
-## Install these tools first
+Signal Lab analyzes synthetic PCM recordings and shows RMS, spectrum, peak and band powers in a React UI. A Java/Spring service coordinates a Rust compute engine and a Python/FastAPI recording catalogue, with PostgreSQL for persistence and RabbitMQ for job delivery.
 
-- Node 24.21 with npm 11
-- Java 25 with Maven 3.9
-- Rust and Cargo 1.91
-- uv 0.8.15
-- Docker Engine with Compose
+## Getting started
 
-The setup command does not install system tools. Playwright installs its own Chromium.
+The commands below target a Linux host with Docker Engine and the Compose plugin. The Docker daemon must be running and accessible to your user. Install Git, Node.js 24 with npm 11, JDK 25 with Maven 3.9, Rust/Cargo 1.91 with rustfmt and Clippy, and uv 0.8.15. Check that `mvn --version` reports Java 25. The first setup and build need network access to download dependencies and base images.
 
-## Prepare the workspace
+From a fresh checkout:
 
-1. Run `npm ci`.
-2. Run `npm run setup`. This command installs the locked dependencies of each project with [Turborepo](https://turborepo.dev).
-3. Copy `.env.example` to `.env`.
-4. Run `npm run fixtures`. This command writes the five small recordings to `.fixtures/`. The recordings service mounts this folder read-only.
+```sh
+git clone https://github.com/DrTtnk/signal-lab-demo.git
+cd signal-lab-demo
+npm ci
+npm run setup
+cp .env.example .env
+npm run fixtures
+docker/build.sh
+docker compose --env-file .env -f docker/compose.yaml up --no-build --wait -d
+```
 
-Each project owns its tool configuration:
+Open [http://127.0.0.1:4173](http://127.0.0.1:4173), select a recording and one or more channels, then submit an analysis. The fixture command generates the recordings locally. The sample credentials are for local use. Keep your existing `.env` on subsequent runs. If port 4173 is already in use, change `WEB_PORT` in `.env` and open the corresponding URL.
 
-| Project          | Tools                                                         |
-| ---------------- | ------------------------------------------------------------- |
-| `backend/java`   | Maven (`.mvn`)                                                |
-| `backend/python` | uv, Ruff, Pyright, Pytest                                     |
-| `backend/rust`   | Cargo                                                         |
-| `tools/fixtures` | uv. Fixture generator and SciPy reference. Outside the stack. |
-| `frontend`       | npm                                                           |
-| `tests/e2e`      | npm                                                           |
+![Completed analysis on the local Docker stack](docs/images/completed-analysis.png)
 
-## Read the documents
+See the [functional design](docs/FD.md), [shared contracts](docs/contracts.md), [numerical profile](docs/numerics.md) and [acceptance status](docs/AC.md).
 
-- [Functional design](docs/FD.md)
-- [Acceptance status](docs/AC.md)
-- [Shared contracts](docs/contracts.md)
-- [Numerical profile](docs/numerics.md)
+## How to run tests
 
-# How to run tests
+After setup, keep Docker running. The browser suite uses Playwright Chromium. On a Linux host that lacks Chromium system libraries, install them first with `npx playwright install-deps chromium`.
 
-Docker must run. The recordings service tests and the Spring tests start a real PostgreSQL with Testcontainers.
+```sh
+npm run check
+npm run setup:browser  # once per Playwright version
+npm run e2e
+```
 
-## Unit, lint and type checks
+- `check` runs static checks, unit and integration tests, an independent SciPy comparison, a frontend build and untimed Rust benchmark smoke tests.
+- `e2e` builds and starts its own Compose stack on port 4175. It exercises the browser flow, service outages and restart, then removes its test volumes. The demo can stay running on port 4173. See the [E2E guide](docs/e2e.md).
+- Numerical tests cover seeded inputs and bit-identical results with 1, 2 and 4 workers. Service tests use real PostgreSQL, RabbitMQ and Rust execution where applicable.
 
-Run `npm run check`. It does these tasks in all projects:
+Run checks and builds in sequence because they share output files. To rerun checks without the Turborepo cache, use `npm run check -- --force --concurrency=2`. Use an idle machine for timed benchmarks. See the [commands, results and measurement limits](docs/benchmarks.md).
 
-- format, lint and type checks
-- unit tests, and the frontend build
-- the `tools/fixtures` tests, which run the real Rust engine against the SciPy reference
-- a smoke run of the Rust benchmarks (each criterion benchmark runs once and measures nothing)
+## How to build and deploy locally
 
-Turborepo caches `check` and `build` for each project. It skips projects that did not change. The Java check also builds the recordings image and writes the fixtures first.
+`npm run build` builds local artifacts. `docker/build.sh` builds the three application images using host networking.
 
-## End-to-end tests on Docker Compose
+To stop the Compose demo and keep its data:
 
-1. Run `npm run setup:browser` once.
-2. Run `npm run e2e`.
+```sh
+docker compose --env-file .env -f docker/compose.yaml down
+```
 
-The command removes the volumes, builds the images, waits until the services are healthy, and runs the browser journey, the outage tests and the restart test. It stops the stack when it ends. The rules are in the [end-to-end test guide](docs/e2e.md).
-
-## End-to-end tests on Kubernetes
-
-1. Start minikube and the chart with `deploy/minikube.sh up`. It needs the three images (see the next section).
-2. Run `deploy/minikube.sh e2e`.
-
-## Benchmarks
-
-A real timing run needs an idle machine. Use `npm run load` for the k6 run. The criterion commands are in [benchmarks](docs/benchmarks.md).
-
-# How to build/deploy
-
-## Build local artifacts
-
-Run `npm run build`.
-
-## Run the local Compose stack
-
-1. Run `docker/build.sh`. It builds the three application images on the host network. The default build network fails DNS lookups on some machines, and Compose 5 cannot use the host network.
-2. Run `docker compose --env-file .env -f docker/compose.yaml up --wait`. This starts web, application, recordings, PostgreSQL and RabbitMQ. All ports are on the loopback interface only.
-3. To stop the stack, run `docker compose --env-file .env -f docker/compose.yaml down`. The database volume stays.
-
-To remove the database volume too, add `--volumes` to the `down` command. Do this once after you pull a change to `docker/database/init.sh`. PostgreSQL runs init scripts only on an empty volume.
-
-## Run the local Kubernetes target
-
-1. Run `docker/build.sh`.
-2. Run `deploy/minikube.sh up`. It creates the minikube profile `signal-lab`, loads the images, copies the fixtures to the node and installs the Helm chart.
-
-Other commands:
-
-- `deploy/minikube.sh stop` stops the cluster.
-- `deploy/minikube.sh down` removes the release and the profile.
-
-The script uses its own kubeconfig, `.kube/config` in this directory. It never reads or writes `~/.kube/config`. The `.envrc` file makes a plain `kubectl` in this directory use the same file. For direnv, run `direnv allow` once.
-
-## Public deployment
-
-No public deployment is configured.
+For the optional Kubernetes demo, install Minikube, kubectl, Helm and curl. After the setup and image build above, run `deploy/minikube.sh up`. The script uses the Docker driver and allocates 4 CPUs and 6 GB of memory. Run `deploy/minikube.sh e2e` after installing Playwright Chromium to test the browser flow through a temporary port-forward on port 4174. The script keeps its kubeconfig at `.kube/config`. Use `deploy/minikube.sh stop` to stop the cluster or `deploy/minikube.sh down` to delete it.

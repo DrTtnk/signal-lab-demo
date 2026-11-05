@@ -6,6 +6,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -24,9 +25,11 @@ public class RecordingsClient {
   private final RestClient client;
   private final HttpClient stream;
   private final String baseUrl;
+  private final Duration requestTimeout;
 
   public RecordingsClient(RestClient.Builder builder, RecordingsProperties properties) {
     this.baseUrl = properties.baseUrl();
+    this.requestTimeout = properties.requestTimeout();
     this.client = builder
       .baseUrl(properties.baseUrl())
       .defaultStatusHandler(HttpStatusCode::is5xxServerError, (request, response) -> {
@@ -69,7 +72,9 @@ public class RecordingsClient {
   }
 
   public InputStream content(UUID recordingId) {
-    var request = HttpRequest.newBuilder(URI.create(baseUrl + "/recordings/" + recordingId + "/content")).build();
+    var request = HttpRequest.newBuilder(URI.create(baseUrl + "/recordings/" + recordingId + "/content"))
+      .timeout(requestTimeout)
+      .build();
     try {
       var response = stream.send(request, HttpResponse.BodyHandlers.ofInputStream());
       if (response.statusCode() != 200) {

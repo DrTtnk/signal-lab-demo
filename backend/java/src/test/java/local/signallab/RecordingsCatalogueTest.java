@@ -1,6 +1,8 @@
 package local.signallab;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -89,6 +91,25 @@ class RecordingsCatalogueTest {
 
         assertEquals(503, response.statusCode());
         assertEquals("recordings_unavailable", JSON.readTree(response.body()).get("code").asString());
+      }
+    }
+  }
+
+  @Test
+  @Timeout(30)
+  void contentTimesOutWhenTheRealRecordingsServiceDoesNotSendHeaders() throws Exception {
+    try (var frozen = TestStack.recordingsService()) {
+      frozen.start();
+      var docker = frozen.getDockerClient();
+      docker.pauseContainerCmd(frozen.getContainerId()).exec();
+      try (var context = TestStack.startApplication(TestStack.baseUrl(frozen), "--recordings.request-timeout=300ms")) {
+        var client = context.getBean(local.signallab.recordings.RecordingsClient.class);
+        var failure = assertThrows(local.signallab.recordings.RecordingsUnavailableException.class, () ->
+          client.content(java.util.UUID.fromString("8069a3fc-629d-5e48-93ac-52639e88c09d"))
+        );
+        assertInstanceOf(java.net.http.HttpTimeoutException.class, failure.getCause());
+      } finally {
+        docker.unpauseContainerCmd(frozen.getContainerId()).exec();
       }
     }
   }

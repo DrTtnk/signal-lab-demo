@@ -86,6 +86,42 @@ describe("parseBatch", () => {
 
   it.each([
     [
+      "Completed with a pending item",
+      { ...rawCompletedBatch, items: [pending] },
+    ],
+    [
+      "AllItemsFailed with a successful item",
+      { ...rawCompletedBatch, state: "AllItemsFailed" },
+    ],
+    [
+      "CompletedWithErrors without a failure",
+      { ...rawCompletedBatch, state: "CompletedWithErrors" },
+    ],
+    [
+      "Queued with a running item",
+      {
+        ...rawBatchBase,
+        state: "Queued",
+        items: [{ ...pending, state: "Running" }],
+      },
+    ],
+    [
+      "unknown fixed-pattern provenance",
+      {
+        ...rawCompletedBatch,
+        items: [
+          {
+            ...rawSucceededItem,
+            recordingProvenance: {
+              kind: "FixedPattern",
+              recipeVersion: "unknown",
+              patternName: "unknown",
+            },
+          },
+        ],
+      },
+    ],
+    [
       "a queued batch with a finish time",
       { ...rawCompletedBatch, state: "Queued" },
     ],

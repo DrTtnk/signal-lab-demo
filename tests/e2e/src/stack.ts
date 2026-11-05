@@ -9,6 +9,8 @@ function compose(...args: string[]): string {
     "docker",
     [
       "compose",
+      "--project-name",
+      env.compose.project,
       "--env-file",
       env.compose.envFile,
       "-f",

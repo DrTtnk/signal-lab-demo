@@ -15,3 +15,5 @@
 !.env.example
 **/playwright/.test-data.json
 .kube/
+
+.work/e2e-fixtures/

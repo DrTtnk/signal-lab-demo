@@ -77,22 +77,15 @@ public record AnalysisService(
 
   private void runClaimed(UUID batchId) {
     var profileId = repository.snapshot(batchId).orElseThrow().profileId();
-    repository
-      .pendingItems(batchId)
-      .stream()
-      .map(item -> attempt(profileId, item))
-      .flatMap(Optional::stream)
-      .findFirst()
-      .ifPresentOrElse(failure -> repository.interruptBatch(batchId, failure.error(), now()), () -> finish(batchId));
-  }
-
-  private Optional<InfrastructureFailure> attempt(String profileId, AnalysisRepository.NewItem.Resolved item) {
-    try {
-      run(profileId, item);
-      return Optional.empty();
-    } catch (InfrastructureFailure e) {
-      return Optional.of(e);
+    for (var item : repository.pendingItems(batchId)) {
+      try {
+        run(profileId, item);
+      } catch (InfrastructureFailure failure) {
+        repository.interruptBatch(batchId, failure.error(), now());
+        return;
+      }
     }
+    finish(batchId);
   }
 
   private void claimOrFail(UUID batchId) {

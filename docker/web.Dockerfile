@@ -9,6 +9,7 @@ COPY backend/rust/package.json backend/rust/package.json
 COPY tools/fixtures/package.json tools/fixtures/package.json
 RUN npm ci
 COPY frontend ./frontend
+COPY contracts/v1 ./contracts/v1
 RUN npm run build --workspace frontend
 FROM nginxinc/nginx-unprivileged:1.29.3-alpine
 USER root

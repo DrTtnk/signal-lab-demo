@@ -10,16 +10,18 @@ The suite in `tests/e2e` runs on the delivered stack. It uses the real container
 1. **No mocks.** Every request reaches a real service. A test never replaces a module, intercepts a request or patches an import.
 2. **UI first.** If a feature has a page, the test uses the page. A test can call the API only for an action that has no page. The list is in "Steps that do not use a page".
 3. **One worker, no retries, tests in order.** The tests tell one story on one shared stack. A test can depend on the earlier tests of its file. A flaky test is a bug. Fix it.
-4. **Clean state.** `tests/e2e/run.sh` does these steps:
-   1. Remove the volumes.
-   2. Build the images (`docker/build.sh`).
-   3. Write the fixtures.
-   4. Start the stack.
+4. **Isolated clean state.** `tests/e2e/run.sh` uses project `signal-lab-e2e`, port 4175 and `tests/e2e/compose.env`. It does not read the demo's `.env`.
+   1. Remove only that project's containers and volumes.
+   2. Write the five fixtures to `.work/e2e-fixtures`.
+   3. Build the images (`docker/build.sh`).
+   4. Start the test stack and wait for health.
+   5. Run the tests.
+   6. Remove the test containers, networks and volumes on exit, including failure.
 
-   The `setup` project then checks that exactly the five fixtures are registered.
+   The `setup` project checks that exactly the five fixtures are registered. Resilience commands use the same explicit Compose project. The demo's `signal-lab` containers, volumes and `.fixtures` are separate. Image tags are shared; a build does not replace a running demo container.
 
 5. **One typed environment.**
-   - URLs and paths come from `src/env.ts`.
+   - URLs, paths and the Compose project name come from `src/env.ts`.
    - Every HTTP call goes through `src/api-client.ts`, which asserts the exact status code.
    - Shared IDs come from `src/test-data.ts`, which the `setup` project writes.
    - Nothing is hardcoded.

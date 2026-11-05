@@ -149,3 +149,13 @@
 - Rewriting to lists does not reduce `wc -w` (bullets and table pipes count as words): the Markdown total grew from about 15,300 to 17,300 words. The gain is in sentence length and layout, not in word count. A sentence-length script that splits only on full stops merges list items into one long "sentence"; read lists as separate sentences.
 - FD.md no longer has a "Version 1.1 extension" section: the asynchronous queue, Kubernetes and performance rules are merged into the body, and the version 1.0 rules that they replaced (synchronous request, one active batch, four containers, interrupt at startup) are deleted. Wrong assumption: I first wrote that reconciliation can set a batch to Interrupted, because the old extension said "Queued to Interrupted when ... reconciliation finds it". `QueueReconciler` only publishes again and stops when the queue is full (`takeWhile`); a broker failure at startup fails the start. Only a failed publication at submission interrupts a Queued batch. I fixed the FD from the code, and the sentence "Reconciliation stops when the queue is full" is new in the FD.
 - The public repository `DrTtnk/signal-lab-demo` starts from one squashed commit, because two earlier commits contained the name of a real cluster. The commit hashes that `docs/benchmarks.md` cited therefore do not exist in the public history; the document now names the engine state (per-sample Hound decoder, or bulk decoder) instead of a hash. The old 20 commits stay in the local branch `backup/pre-publish`. Rule: before the first publication, search the whole history, not only the working tree, for private names (`git log -S`).
+
+## 2026-11-04 — Dependency versions
+
+Do not select a dependency version from recall. The first selected Ajv version, 8.17.1, had a published advisory. Registry inspection identified 8.20.0; the lockfile now uses that version. Use a writable npm cache when the default cache is read-only.
+
+The batch Zod value was used only to infer a type after canonical validation replaced it. ESLint rejects that unused runtime value. Use plain wire types and one runtime validator instead of retaining a second validation tree.
+
+Run Maven from backend/java. Its .mvn/maven.config names a settings file relative to the working directory; -f from the repository root does not rebase that path.
+
+- When comparing Markdown acceptance criteria before and after formatting, compare trimmed table cells. The first check missed rows with wider ID cells.

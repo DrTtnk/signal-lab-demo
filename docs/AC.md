@@ -4,6 +4,8 @@
 
 The first analysis journey works: select, analyze, show, store. The history view is not implemented.
 
+Validation on 4 November 2026: 199 distinct tests and all static checks passed with cache bypass; all four build tasks passed. The isolated Compose suite passed all 17 E2E tests. The two demo volumes retained their identity and creation metadata after cleanup. No new timed benchmark was run.
+
 ## Summary
 
 | AC       | State   | Subject                               |
@@ -65,6 +67,7 @@ Done:
 
 - An unavailable engine interrupts the batch. The batch is stored as Interrupted and the API returns 503.
 - A stopped recordings service and a frozen recordings service give a 503 InfrastructureError.
+- The WAV request has a response-header timeout from `spring.http.clients.read-timeout` (10 s by default). A Java test pauses the real service and checks `HttpTimeoutException`. After headers, the engine deadline bounds processing of the streamed body.
 - Black-box e2e (`resilience`): with the message broker stopped, the page shows an interrupted batch with `broker_unavailable`. With the recordings service stopped, the page shows `recordings_unavailable`. Both recover.
 - The broker connection timeout is 2 s. A Java test with a blackholed address covers it.
 
@@ -104,7 +107,8 @@ Not done:
 SA9:
 
 - A full queue refuses a submission with 429 `capacity_busy` and creates no batch.
-- Not tested: the process deadline and the buffering limits.
+- The engine runner test checks the process deadline with an open input pipe.
+- Not tested: the buffering limits.
 
 SA10:
 
@@ -117,13 +121,16 @@ SA10:
 
 - These gates pass: frontend, Python, Java (Error Prone, NullAway) and Rust (Clippy).
 - The Rust input adapter and the Java application use the canonical schema at runtime.
-- The TypeScript parsers are written by hand. Pending: a check that compares them with the canonical schema.
+- The frontend batch parser validates the canonical JSON Schema with Ajv, including batch/item state rules and recording provenance. Regression tests reject contradictory terminal states.
+- The catalogue and error parsers still use hand-written Zod definitions.
 
 ## SA12: Setup, check and build (Partial)
 
 - `npm run setup`, `npm run check` and `npm run build` pass.
 - The real Compose scaffold starts healthy, and the browser smoke test of the built UI passes.
-- Not verified: a clean checkout and a hosted CI run.
+- Compose E2E uses a separate project, port, fixture directory and volumes. Cleanup is limited to that project.
+- A clean copy of the local source passed setup, Compose startup and shutdown, browser flow, all three test levels and the build on 5 November 2026.
+- A clean checkout of the published revision and hosted CI for these changes remain unverified.
 
 ## SA13: Performance measurement (Partial)
 
