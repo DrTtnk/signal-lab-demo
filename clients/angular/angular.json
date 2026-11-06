@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "projects": {
+    "signal-lab-angular": {
+      "projectType": "application",
+      "root": "",
+      "sourceRoot": "src",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:application",
+          "options": {
+            "browser": "src/main.ts",
+            "tsConfig": "tsconfig.json",
+            "index": "src/index.html",
+            "outputPath": "dist",
+            "baseHref": "/angular/",
+            "styles": ["../../frontend/src/style.css"],
+            "aot": true
+          }
+        }
+      }
+    }
+  }
+}

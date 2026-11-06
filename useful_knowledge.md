@@ -159,3 +159,10 @@ The batch Zod value was used only to infer a type after canonical validation rep
 Run Maven from backend/java. Its .mvn/maven.config names a settings file relative to the working directory; -f from the repository root does not rebase that path.
 
 - When comparing Markdown acceptance criteria before and after formatting, compare trimmed table cells. The first check missed rows with wider ID cells.
+
+- Expo requires React 19.3.0. Pin React and React DOM at the workspace root as well as in the apps. Check `npm ls react react-dom` for a single installed version. Pinning only the apps left a different peer version at the root.
+- Expo's Babel dependency tree exposes React Compiler declarations to the React build. Install the Babel core and traverse declarations so the compiler can check these types.
+- A Docker daemon can be accessible while the default Docker configuration is read-only. A writable `DOCKER_CONFIG` lets Buildx store its activity file.
+- React Native Web did not expose `accessibilityState.checked` on a `Pressable`. Use `aria-checked`. React Native also maps this property to the native checked state.
+- Spotless starts npm from Maven. If the default npm cache is read-only, set `npm_config_cache` for the whole check. Passing `--cache` to the earlier dependency install does not configure the formatter.
+- In zsh, `path` is tied to `PATH`. Use a local name such as `client_route` for URL paths in shell checks.

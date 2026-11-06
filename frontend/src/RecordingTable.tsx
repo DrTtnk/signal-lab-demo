@@ -1,13 +1,6 @@
+import { kibibytes, range, selectChannels } from "./selection";
 import type { Selection } from "./analysis";
 import type { Recording } from "./recordings";
-
-function kibibytes(bytes: number): string {
-  return `${(bytes / 1024).toFixed(1)} KiB`;
-}
-
-function range(count: number): number[] {
-  return Array.from({ length: count }, (_, index) => index);
-}
 
 export function RecordingTable({
   recordings,
@@ -27,12 +20,7 @@ export function RecordingTable({
       ?.channels;
 
   const setChannels = (recordingId: string, channels: readonly number[]) => {
-    const others = selections.filter(
-      (selection) => selection.recordingId !== recordingId,
-    );
-    onChange(
-      channels.length === 0 ? others : [...others, { recordingId, channels }],
-    );
+    onChange(selectChannels(selections, recordingId, channels));
   };
 
   return (

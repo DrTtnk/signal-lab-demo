@@ -7,7 +7,8 @@
     "frontend",
     "tests/e2e",
     "backend/*",
-    "tools/*"
+    "tools/*",
+    "clients/*"
   ],
   "scripts": {
     "setup": "turbo run setup",
@@ -19,6 +20,8 @@
     "load": "k6 run tests/load/analysis.js"
   },
   "devDependencies": {
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
     "turbo": "2.11.10"
   },
   "engines": {

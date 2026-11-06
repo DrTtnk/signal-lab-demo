@@ -17,3 +17,6 @@
 .kube/
 
 .work/e2e-fixtures/
+
+clients/angular/.angular/
+clients/native/.expo/

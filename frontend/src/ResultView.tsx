@@ -1,27 +1,8 @@
-import type { Batch, BatchItem, SucceededItem } from "./analysis";
-
-const BAND_EDGES_HZ = [0, 1500, 6000, 24000] as const;
-type Channel = SucceededItem["result"]["channels"][number];
-
-function format(value: number): string {
-  return String(Number(value.toPrecision(6)));
-}
+import type { Batch, BatchItem } from "./analysis";
+import { BAND_EDGES_HZ, format, spectrum, type Channel } from "./result-format";
 
 function Spectrum({ channel }: { channel: Channel }) {
-  const width = 600;
-  const height = 160;
-  const logs = channel.meanPsd.map((value) =>
-    Math.log10(Math.max(value, 1e-20)),
-  );
-  const top = Math.max(...logs);
-  const bottom = Math.min(top - 1, Math.min(...logs));
-  const points = logs
-    .map((value, bin) => {
-      const x = (bin / (logs.length - 1)) * width;
-      const y = height - ((value - bottom) / (top - bottom)) * height;
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    })
-    .join(" ");
+  const { width, height, points } = spectrum(channel);
   return (
     <svg
       role="img"

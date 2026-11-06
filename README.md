@@ -1,8 +1,8 @@
 # Signal Lab
 
-> **Technology demonstration.** Signal Lab is not a production architecture or a system designed for a client. Its brief is to show how Java, Rust, Python and React can work together on a distributed workload where performance matters. The service boundaries make the integration between the technologies visible. A production design would start with an analysis of the client's needs and a concrete set of requirements for workload, latency, reliability, security, deployment and operating cost.
+> **Technology demonstration.** Signal Lab is not a production architecture or a system designed for a client. Its brief is to show how Java, Rust, Python and three UI frameworks can work together on a distributed workload where performance matters. The service boundaries make the integration between the technologies visible. A production design would start with an analysis of the client's needs and a concrete set of requirements for workload, latency, reliability, security, deployment and operating cost.
 
-Signal Lab analyzes synthetic PCM recordings and shows RMS, spectrum, peak and band powers in a React UI. A Java/Spring service coordinates a Rust compute engine and a Python/FastAPI recording catalogue, with PostgreSQL for persistence and RabbitMQ for job delivery.
+Signal Lab analyzes synthetic PCM recordings and shows RMS, spectrum, peak and band powers in React, Angular and React Native clients. A Java/Spring service coordinates a Rust compute engine and a Python/FastAPI recording catalogue, with PostgreSQL for persistence and RabbitMQ for job delivery.
 
 ## Getting started
 
@@ -23,6 +23,22 @@ docker compose --env-file .env -f docker/compose.yaml up --no-build --wait -d
 
 Open [http://127.0.0.1:4173](http://127.0.0.1:4173), select a recording and one or more channels, then submit an analysis. The fixture command generates the recordings locally. The sample credentials are for local use. Keep your existing `.env` on subsequent runs. If port 4173 is already in use, change `WEB_PORT` in `.env` and open the corresponding URL.
 
+The same stack serves three clients. Each uses the same recording catalogue and analysis API.
+
+| Client | URL |
+| --- | --- |
+| React | [localhost:4173](http://127.0.0.1:4173/) |
+| Angular | [localhost:4173/angular/](http://127.0.0.1:4173/angular/) |
+| React Native (Expo web) | [localhost:4173/native/](http://127.0.0.1:4173/native/) |
+
+To open the native client in an Android emulator, start the Compose stack, run `adb reverse tcp:4173 tcp:4173`, then run:
+
+```sh
+EXPO_PUBLIC_API_ORIGIN=http://127.0.0.1:4173 npm run start --workspace @signal-lab/native -- --android
+```
+
+Use the corresponding `WEB_PORT` if you changed it. A physical device needs an API origin that it can reach. The default Compose binding is loopback.
+
 ![Completed analysis on the local Docker stack](docs/images/completed-analysis.png)
 
 See the [functional design](docs/FD.md), [shared contracts](docs/contracts.md), [numerical profile](docs/numerics.md) and [acceptance status](docs/AC.md).
@@ -37,8 +53,8 @@ npm run setup:browser  # once per Playwright version
 npm run e2e
 ```
 
-- `check` runs static checks, unit and integration tests, an independent SciPy comparison, a frontend build and untimed Rust benchmark smoke tests.
-- `e2e` builds and starts its own Compose stack on port 4175. It exercises the browser flow, service outages and restart, then removes its test volumes. The demo can stay running on port 4173. See the [E2E guide](docs/e2e.md).
+- `check` runs static checks, unit and integration tests, an independent SciPy comparison, the three client builds and untimed Rust benchmark smoke tests.
+- `e2e` builds and starts its own Compose stack on port 4175. It exercises all three browser clients, service outages and restart, then removes its test volumes. The demo can stay running on port 4173. See the [E2E guide](docs/e2e.md).
 - Numerical tests cover seeded inputs and bit-identical results with 1, 2 and 4 workers. Service tests use real PostgreSQL, RabbitMQ and Rust execution where applicable.
 
 Run checks and builds in sequence because they share output files. To rerun checks without the Turborepo cache, use `npm run check -- --force --concurrency=2`. Use an idle machine for timed benchmarks. See the [commands, results and measurement limits](docs/benchmarks.md).

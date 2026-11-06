@@ -1,0 +1,144 @@
+<main>
+  <h1>Signal Lab</h1>
+  @let catalog = catalogue(); @switch (catalog.status) { @case ("loading") {
+  <p role="status">Loading recordings</p>
+  } @case ("failed") {
+  <p role="alert">{{catalog.code}}: {{catalog.message}}</p>
+  } @case ("ready") { @if (catalog.recordings.length === 0) {
+  <p>No recordings are registered.</p>
+  } @else {
+  <table>
+    <caption>
+      Registered recordings
+    </caption>
+    <thead>
+      <tr>
+        <th scope="col">Analyse</th>
+        <th scope="col">Name</th>
+        <th scope="col">Channels</th>
+        <th scope="col">Sample rate</th>
+        <th scope="col">Frames</th>
+        <th scope="col">Size</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (recording of catalog.recordings; track recording.recordingId) { @let
+      chosen = channelsOf(recording.recordingId);
+      <tr>
+        <td>
+          <input
+            #record
+            type="checkbox"
+            [attr.aria-label]="'Analyse ' + recording.name"
+            [checked]="chosen !== undefined"
+            (change)="setChannels(recording.recordingId, record.checked ? range(recording.channelCount) : [])"
+          />
+        </td>
+        <th scope="row">{{recording.name}}</th>
+        <td>
+          @for (channel of range(recording.channelCount); track channel) {
+          <span class="channel"
+            ><input
+              #input
+              type="checkbox"
+              [attr.aria-label]="'Channel ' + channel + ' of ' + recording.name"
+              [disabled]="chosen === undefined"
+              [checked]="chosen?.includes(channel) ?? false"
+              (change)="toggleChannel(recording.recordingId, channel, input.checked)"
+            />{{channel}}</span
+          >
+          }
+        </td>
+        <td>{{recording.sampleRateHz / 1000}} kHz</td>
+        <td>{{recording.frameCount}}</td>
+        <td>{{kibibytes(recording.byteLength)}}</td>
+      </tr>
+      }
+    </tbody>
+  </table>
+  }
+  <button
+    type="button"
+    [disabled]="selections().length === 0 || waiting()"
+    (click)="analyse()"
+  >
+    Analyse selected
+  </button>
+  } } @if (waiting()) {
+  <p role="status">Analysing, please wait</p>
+  } @let outcome = analysis(); @if (outcome.status === "failed") {
+  <p role="alert">{{outcome.code}}: {{outcome.message}}</p>
+  } @if (outcome.status === "batch") { @let batch = outcome.batch;
+  <section aria-label="Analysis result">
+    <h2>Analysis {{batch.state}}</h2>
+    <p>Batch {{batch.batchId}}</p>
+    @if (batch.state === "Interrupted") {
+    <p role="alert">{{batch.error.code}}: {{batch.error.message}}</p>
+    } @for (item of batch.items; track item.itemId) { @let name =
+    names().get(item.recordingId) ?? item.recordingId;
+    <section [attr.aria-label]="name">
+      <h3>{{name}}</h3>
+      @switch (item.state) { @case ("Failed") {
+      <p role="alert">{{item.error.code}}: {{item.error.message}}</p>
+      } @case ("Interrupted") {
+      <p role="alert">{{item.error.code}}: {{item.error.message}}</p>
+      } @case ("NotRun") {
+      <p>Not run: batch interrupted</p>
+      } @case ("Succeeded") {
+      <p>
+        {{item.result.processedWindows}} windows,
+        {{item.result.processedFrames}} frames,
+        {{item.result.ignoredTailFrames}} frames ignored
+      </p>
+      @for (channel of item.result.channels; track channel.channelIndex) { @let
+      plot = spectrum(channel);
+      <section [attr.aria-label]="'Channel ' + channel.channelIndex">
+        <h4>Channel {{channel.channelIndex}}</h4>
+        <p>RMS {{format(channel.rms)}} (normalised amplitude)</p>
+        @if (channel.peak.kind === "Peak") {
+        <p>Peak {{channel.peak.frequencyHz}} Hz (bin {{channel.peak.bin}})</p>
+        } @else {
+        <p>No spectral peak</p>
+        }
+        <ul>
+          @for (power of channel.bandPowers; track $index) {
+          <li>
+            Band {{$index + 1}} ({{bandEdges[$index]}}–{{bandEdges[$index + 1]}}
+            Hz): {{format(power)}} normalised amplitude²
+          </li>
+          }
+        </ul>
+        <svg
+          role="img"
+          [attr.aria-label]="'Spectrum of channel ' + channel.channelIndex + ', 0 to 24000 Hz, logarithmic power density'"
+          [attr.viewBox]="'0 0 ' + plot.width + ' ' + plot.height"
+          width="100%"
+        >
+          <polyline
+            [attr.points]="plot.points"
+            fill="none"
+            stroke="#60a5fa"
+            stroke-width="1"
+          />
+          <text x="0" [attr.y]="plot.height - 4" fill="#9ca3af" font-size="10">
+            0 Hz
+          </text>
+          <text
+            [attr.x]="plot.width"
+            [attr.y]="plot.height - 4"
+            fill="#9ca3af"
+            font-size="10"
+            text-anchor="end"
+          >
+            24000 Hz
+          </text>
+        </svg>
+      </section>
+      } } @default {
+      <p>{{item.state}}</p>
+      } }
+    </section>
+    }
+  </section>
+  }
+</main>

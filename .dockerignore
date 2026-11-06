@@ -11,3 +11,6 @@
 **/playwright-report
 .env
 .git
+
+**/.angular
+**/.expo

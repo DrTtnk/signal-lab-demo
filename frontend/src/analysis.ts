@@ -115,8 +115,11 @@ export function isTerminal(batch: Batch): boolean {
 
 export const POLL_INTERVAL_MS = 2000;
 
-export async function fetchBatch(batchId: string): Promise<Batch> {
-  const response = await fetch(`/api/analyses/${batchId}`);
+export async function fetchBatch(
+  batchId: string,
+  apiOrigin = "",
+): Promise<Batch> {
+  const response = await fetch(`${apiOrigin}/api/analyses/${batchId}`);
   if (!response.ok) {
     throw new Error(
       `Batch ${batchId} returned HTTP ${String(response.status)}`,
@@ -164,8 +167,9 @@ export type AnalysisOutcome =
 
 export async function submitAnalysis(
   request: AnalysisRequest,
+  apiOrigin = "",
 ): Promise<AnalysisOutcome> {
-  const response = await fetch("/api/analyses", {
+  const response = await fetch(`${apiOrigin}/api/analyses`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),

@@ -47,8 +47,10 @@ export type RecordingsOutcome =
   | { status: "ready"; recordings: Recording[] }
   | { status: "failed"; code: string; message: string };
 
-export async function fetchRecordings(): Promise<RecordingsOutcome> {
-  const response = await fetch("/api/recordings");
+export async function fetchRecordings(
+  apiOrigin = "",
+): Promise<RecordingsOutcome> {
+  const response = await fetch(`${apiOrigin}/api/recordings`);
   const payload: unknown = await response.json();
   if (response.ok) {
     return { status: "ready", recordings: parseRecordings(payload) };

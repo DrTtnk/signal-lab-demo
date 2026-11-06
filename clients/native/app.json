@@ -1,0 +1,8 @@
+{
+  "expo": {
+    "name": "Signal Lab",
+    "slug": "signal-lab",
+    "userInterfaceStyle": "automatic",
+    "experiments": { "baseUrl": "/native" }
+  }
+}

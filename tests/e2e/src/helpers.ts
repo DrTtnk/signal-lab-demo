@@ -1,7 +1,14 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 
+export async function openClient(
+  page: Page,
+  path: "/" | "/angular/" | "/native/",
+): Promise<void> {
+  await page.goto(path);
+}
+
 export async function openCatalogue(page: Page): Promise<void> {
-  await page.goto("/");
+  await openClient(page, "/");
   await expect(
     page.getByRole("table", { name: "Registered recordings" }),
   ).toBeVisible();
